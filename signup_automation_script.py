@@ -6,78 +6,104 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
-# Setup Chrome
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service)
-driver.maximize_window()
+print("Mulai menjalankan automation test...")
 
-# Tambahkan timeout load halaman
-driver.set_page_load_timeout(120)
+# buka browser chrome otomatis
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+driver.maximize_window()  # supaya tampilan penuh
 
-# Buka website
+# buka halaman register
 driver.get("https://authorized-partner.vercel.app/register")
-wait = WebDriverWait(driver, 10)
-print("Website opened successfully!")
+print("Halaman register berhasil dibuka")
 
-# Klik checkbox
-checkbox = wait.until(EC.element_to_be_clickable((By.ID, "remember")))
-checkbox.click()
-print("Checkbox clicked")
+# wait dipakai supaya selenium menunggu elemen muncul dulu
+wait = WebDriverWait(driver, 15)
 
-# Klik tombol Continue
-continue_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Continue')]")))
-continue_button.click()
-print("Continue button clicked")
+try:
+    # STEP 1: klik checkbox persetujuan
+    print("Mencari checkbox persetujuan...")
+    checkbox = wait.until(EC.presence_of_element_located((By.ID, "remember")))
+    time.sleep(1)
+    checkbox.click()
+    print("Checkbox berhasil diklik")
 
-# Isi First Name
-first_name = wait.until(EC.presence_of_element_located((By.NAME, "firstName")))
-first_name.send_keys("Tessaa")
-print("First Name filled")
+    # STEP 2: klik tombol Continue
+    print("Mencari tombol Continue...")
+    continue_btn = wait.until(
+        EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Continue')]"))
+    )
+    time.sleep(1)
+    continue_btn.click()
+    print("Tombol Continue sudah diklik")
 
-# Isi Last Name
-last_name = wait.until(EC.presence_of_element_located((By.NAME, "lastName")))
-last_name.send_keys("mnrga")
-print("Last Name filled")
+    # STEP 3: isi form data diri satu per satu
+    print("Mulai mengisi form register...")
 
-# Isi Email
-email_input = wait.until(EC.presence_of_element_located((By.NAME, "email")))
-email_input.send_keys("Tessa12234@gmail.id")
-print("Email filled")
+    first = wait.until(EC.visibility_of_element_located((By.NAME, "firstName")))
+    first.send_keys("Tessa")
+    time.sleep(1)
 
-# Isi Phone (gunakan JavaScript agar tidak error ElementNotInteractable)
-phone_input = wait.until(EC.presence_of_element_located((By.NAME, "phoneNumber")))
-driver.execute_script("arguments[0].value='812234546';", phone_input)
-print("Phone filled")
+    last = wait.until(EC.visibility_of_element_located((By.NAME, "lastName")))
+    last.send_keys("Manurung")
+    time.sleep(1)
 
-# 🔹 Isi Password
-password_input = wait.until(
-    EC.presence_of_element_located((By.NAME, "password"))
-)
-password_input.send_keys("PasswordRahasia1223!")  # ganti sesuai password yang ingin diuji
+    email = wait.until(EC.visibility_of_element_located((By.NAME, "email")))
+    email.send_keys("tessa12234@gmail.com")
+    time.sleep(1)
 
-print("Password filled")
+    phone = wait.until(EC.visibility_of_element_located((By.NAME, "phoneNumber")))
+    phone.send_keys("0812234546")
+    time.sleep(1)
 
-# 🔹 Isi Confirm Password
-confirm_password_input = wait.until(
-    EC.presence_of_element_located((By.NAME, "confirmPassword"))
-)
-confirm_password_input.send_keys("PasswordRahasia1223!")  # pastikan sama dengan password
-print("Confirm Password filled!")
+    password = wait.until(EC.visibility_of_element_located((By.NAME, "password")))
+    password.send_keys("PasswordRahasia1223!")
+    time.sleep(1)
 
+    confirm = wait.until(EC.visibility_of_element_located((By.NAME, "confirmPassword")))
+    confirm.send_keys("PasswordRahasia1223!")
+    time.sleep(1)
 
-print("Form submitted")
+    print("Semua field form sudah diisi")
 
-next_button = wait.until(
-    EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit'].primary-btn"))
-)
-next_button.click()
-print("Next button clicked")
+    # STEP 4: klik tombol submit
+    submit_btn = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit'].primary-btn"))
+    )
+    time.sleep(1)
+    submit_btn.click()
+    print("Form sudah disubmit")
 
+    # STEP 5: LOOP UNTUK MULTI-STEP SIGNUP
+    time.sleep(2)
+    while "register" in driver.current_url:
+        try:
+            print("Mendeteksi step berikutnya...")
 
+            # jika ada field di step berikutnya, isi di sini
+            # contoh:
+            # company = wait.until(EC.visibility_of_element_located((By.NAME, "companyName")))
+            # company.send_keys("My Company")
+            # time.sleep(1)
 
-# Tunggu 5 detik untuk verifikasi
-time.sleep(5)
+            # klik tombol Continue / Next
+            next_btn = wait.until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Continue')]"))
+            )
+            time.sleep(1)
+            next_btn.click()
+            print("Step berikutnya sudah diklik")
+            time.sleep(2)
 
-# Tutup browser
-driver.quit()
-print("Script completed successfully!")
+        except Exception:
+            print("Tidak ada step berikutnya, signup flow selesai")
+            break
+
+    print("Signup flow selesai, URL terakhir:", driver.current_url)
+
+except Exception as e:
+    print("Terjadi error saat menjalankan automation:", e)
+
+finally:
+    time.sleep(3)
+    driver.quit()
+    print("Browser ditutup, automation selesai")
